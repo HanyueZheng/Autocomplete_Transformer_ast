@@ -8,6 +8,9 @@ from torch.autograd import Variable
 # Embeddings and Softmax : 嵌入和SoftMax
 #
 # =============================================================================
+# 根据给的词典大小，创建一个[vocab,d_model]大小的embedding，其中每一行代表一个词的embedding。
+# dic={"hello":0,"world":1}，如果要看hello的Embedding，那么dic("hello")，即编号0被作为输入交给nn.Embedding，得到对应的Embedding。
+# 这里只是初始的Embedding，要经过训练之后，才能得到hello真正的Embedding
 class Embeddings(nn.Module):
 	def __init__(self, d_model, vocab):
 		super(Embeddings, self).__init__()

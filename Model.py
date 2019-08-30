@@ -12,6 +12,8 @@ from Embed import Embeddings,PositionalEncoding
 #
 # =============================================================================
 # 定义一个函数，它接受超参数并生成完整的模型。
+# Transformer由encoder和decoder组成。其中用到的sublayer有MultiHeadedAttention，PositionwiseFeedForward，这两个是在encoder和decoder中的，
+# 然后PositionalEncoding和Embeddings是用在输入之后，encoder及decoder层之间的，Generator是用在decoder之后的
 def make_model(src_vocab, tgt_vocab, N=6, d_model=512, d_ff=2048, h=8, dropout=0.1):
 	"从超参数构造模型"
 	c = copy.deepcopy
@@ -26,6 +28,7 @@ def make_model(src_vocab, tgt_vocab, N=6, d_model=512, d_ff=2048, h=8, dropout=0
 		Generator(d_model, tgt_vocab))
 
 	# 从代码来看，使用 Glorot / fan_avg初始化参数很重要。
+	# 对参数进行均匀分布初始化
 	for p in model.parameters():
 		if p.dim() > 1:
 			nn.init.xavier_uniform_(p)

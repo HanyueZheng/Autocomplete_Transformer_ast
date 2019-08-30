@@ -6,6 +6,7 @@ import torch
 from torch.autograd import Variable
 import os
 
+
 class DataLoader():
     def __init__(self, filename, chunk_len, device):
         with open(filename,'r',encoding='UTF-8') as f:

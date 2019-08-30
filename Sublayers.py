@@ -44,9 +44,11 @@ class SublayerConnection(nn.Module):
 #
 # =============================================================================
 # 公式：Attention(Q,K,V)=softmax(Q K^T /√dk ) V
+# 按照论文中给出的计算过程写即可
 def attention(query, key, value, mask=None, dropout=None):
 	"计算'可缩放点乘注意力'"
 	d_k = query.size(-1)
+	# 此处query和key的大小为[nbatches,head_size,src_size,d_moel/head_size]，经过torch.matmul后大小为[nbatches,head_size,src_size,src_size]
 	scores = torch.matmul(query, key.transpose(-2, -1)) / math.sqrt(d_k)
 	if mask is not None:
 		scores = scores.masked_fill(mask == 0, -1e9)
@@ -84,6 +86,7 @@ class MultiHeadedAttention(nn.Module):
 		x, self.attn = attention(query, key, value, mask=mask, dropout=self.dropout)
 
 		# 3)使用view方法做Concat然后做最终的线性变换。
+		# 处理前x的大小为[nbatches,self_h,src_size,self.d_k],处理后的大小为[nbatches,src_size,d_model]
 		x = x.transpose(1, 2).contiguous().view(nbatches, -1, self.h * self.d_k)
 
 		return self.linears[-1](x)

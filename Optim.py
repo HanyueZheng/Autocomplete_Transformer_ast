@@ -49,7 +49,7 @@ def get_std_opt(model):
 # =============================================================================
 class LabelSmoothing(nn.Module):
 	"实现平滑标签"
-
+	#即将one-hot编码中的0改成很小的数，1改成接近1的数
 	def __init__(self, size, padding_idx, smoothing=0.0):
 		super(LabelSmoothing, self).__init__()
 		self.criterion = nn.KLDivLoss(reduction='sum')

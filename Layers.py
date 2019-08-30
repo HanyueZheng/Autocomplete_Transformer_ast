@@ -14,6 +14,9 @@ class EncoderLayer(nn.Module):
 		self.sublayer = clones(SublayerConnection(size, dropout), 2)
 		self.size = size
 
+	#输入为数据及对应的mask，因为encoder中不需要掩盖任何输入token，所以mask一般为[1，1...1]
+	#self_attn即multiheadattention，前三个输入为Query，Key，Value。其中Query可以理解为查询语句，Key-Value对可以理解为键值对，
+	#最后一个参数mask，在decoder中会产生作用，因为在decoder中mask不全为1
 	def forward(self, x, mask):
 		"按照论文中的图1（左）的方式进行连接"
 		x = self.sublayer[0](x, lambda x: self.self_attn(x, x, x, mask))
