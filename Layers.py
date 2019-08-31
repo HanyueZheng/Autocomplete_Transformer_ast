@@ -41,3 +41,19 @@ class DecoderLayer(nn.Module):
 		x = self.sublayer[0](x, lambda x: self.self_attn(x, x, x, tgt_mask))
 		x = self.sublayer[1](x, lambda x: self.src_attn(x, m, m, src_mask))
 		return self.sublayer[2](x, self.feed_forward)
+
+
+class EncoderLayer4KG(nn.Module):
+	def __init__(self, size, intermediate_size, self_attn, self_attn_ent, feed_forward, dropout):
+		super(EncoderLayer4KG, self).__init__()
+		self.attention = self_attn
+		self.attention_ent = self_attn_ent
+		self.sublayer = SublayerConnection4KG(size, intermediate_size, dropout)
+		self.feed_forward = feed_forward
+		self.size = size
+
+	def forward(self, hidden_states, attention_mask, hidden_states_ent, attention_mask_ent, ent_mask):
+		hidden_states = self.attention(hidden_states, hidden_states, hidden_states, attention_mask)
+		hidden_states_ent = self.attention(hidden_states_ent, hidden_states_ent, hidden_states_ent, attention_mask_ent)
+		# TODO ?
+		return self.sublayer(hidden_states, hidden_states_ent)
