@@ -77,3 +77,4 @@ def greedy_decode(model, src, src_mask, max_len):
 		ys = torch.cat([ys,
 		                torch.ones(1, 1).type_as(src.data).fill_(next_word)], dim=1)
 	return ys
+
