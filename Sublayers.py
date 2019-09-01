@@ -121,3 +121,44 @@ class Generator(nn.Module):
 
 	def forward(self, x):
 		return F.log_softmax(self.proj(x), dim=-1)
+
+
+class IntermediateLayer(nn.Module):
+	def __init__(self, size, intermediate_size):
+		super(IntermediateLayer, self).__init__()
+		self.dense = nn.Linear(size, intermediate_size)
+		self.dense_ent = nn.Linear(100, intermediate_size)
+
+		# Information Fusion
+		self.intermediate_act_fn = gelu
+
+	def forward(self, hidden_states, hidden_states_ent):
+		hidden_states_ = self.dense(hidden_states)
+		hidden_states_ent_ = self.dense_ent(hidden_states_ent)
+
+		hidden_states = self.intermediate_act_fn(hidden_states_ + hidden_states_ent_)
+
+		return hidden_states#, hidden_states_ent
+
+
+class SublayerConnection4KG(nn.Module):
+	def __init__(self, size, intermediate_size, dropout):
+		super(SublayerConnection4KG, self).__init__()
+		self.intermediate = IntermediateLayer(size, intermediate_size)
+		self.dense = nn.Linear(size, intermediate_size)
+		self.dense_ent = nn.Linear(100, intermediate_size)
+		self.norm = LayerNorm(size)
+		self.norm_ent = LayerNorm(100)
+		self.dropout = nn.Dropout(dropout)
+
+	def forward(self, attention_output, attention_output_ent):
+		intermediate_output = self.intermediate(attention_output, attention_output_ent)
+		hidden_states = self.dense(intermediate_output)
+		hidden_states = self.dropout(hidden_states)
+		hidden_states = self.LayerNorm(hidden_states + attention_output)
+
+		hidden_states_ent = self.dense_ent(intermediate_output)
+		hidden_states_ent = self.dropout(hidden_states_ent)
+		hidden_states_ent = self.LayerNorm_ent(hidden_states_ent + attention_output_ent)
+
+		return hidden_states, hidden_states_ent
