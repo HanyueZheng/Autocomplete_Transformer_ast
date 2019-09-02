@@ -5,7 +5,7 @@ from torch.autograd import Variable
 from Batch import Batch
 from Optim import NoamOpt, LabelSmoothing
 from Model import make_model
-from Train import run_epoch, greedy_decode, SimpleLossCompute
+from Train import run_epoch, greedy_decode, beam_search_decode,SimpleLossCompute
 from Dataloader import DataLoader_char, DataLoader_token
 from HyperParameter import chunk_len, batch, nbatches, transformer_size, epoch_number, epoches_of_loss_record, \
 	predict_length
@@ -55,11 +55,11 @@ def data_gen_token(dataloader, batch, nbatches,chunk_len,device):
 if __name__ == "__main__":
 	device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 	
-	sys.argv.append('inference')
+	sys.argv.append('train')
 	sys.argv.append('EN-ATP-V226.txt')
 	sys.argv.append('token')
-	sys.argv.append('transformer100.model')
-	sys.argv.append('ATP shall calculate')
+	sys.argv.append('transformer3000.model')
+	sys.argv.append('The ATP software is the core')
 	
 	if (len(sys.argv) < 2):
 		print("usage: lstm [train file | inference (words vocabfile) ]")
@@ -148,13 +148,25 @@ if __name__ == "__main__":
 			word_list = [i for i in word_list if (len(str(i))) != 0]
 			src = Variable(dataloader.vocabularyLoader.token_tensor(word_list).unsqueeze(0))
 			src_mask = Variable((src != 0).unsqueeze(-2))
-			output_embed = greedy_decode(model, src, src_mask, max_len=predict_length)[0].cpu().numpy()
-			result = []
-			for i in output_embed:
-				result.append(dataloader.vocabularyLoader.index2token[i])
-			result=result[1:]
-			result=" ".join(result)
-			print(result)
+
+			# greedy decode
+			# output_embed = greedy_decode(model, src, src_mask, max_len=predict_length)[0].cpu().numpy()
+			# result = []
+			# for i in output_embed:
+			# 	result.append(dataloader.vocabularyLoader.index2token[i])
+			# result=result[1:]
+			# result=" ".join(result)
+			# print(result)
+
+			output_embed_list = beam_search_decode(model, src, src_mask, max_len=predict_length)
+			for j in range(len(output_embed_list)):
+				output_embed=output_embed_list[j][1][0].cpu().numpy()
+				result = []
+				for i in output_embed:
+					result.append(dataloader.vocabularyLoader.index2token[i])
+				result=result[1:]
+				result=" ".join(result)
+				print(result)
 
 
 

@@ -7,7 +7,7 @@ from torch.autograd import Variable
 from Model import subsequent_mask
 import matplotlib.pyplot as plt
 import seaborn
-from HyperParameter import epoches_of_loss_record,epoches_of_model_save
+from HyperParameter import epoches_of_loss_record,epoches_of_model_save,beam_search_number
 
 # =============================================================================
 #
@@ -66,15 +66,40 @@ class SimpleLossCompute:
 def greedy_decode(model, src, src_mask, max_len):
 	memory = model.encode(src, src_mask)
 	ys = torch.ones(1, 1).fill_(src[0][-1].cpu().numpy().item()).type_as(src.data)
-	for i in range(max_len - 1):
-		out = model.decode(memory, src_mask,
-		                   Variable(ys),
-		                   Variable(subsequent_mask(ys.size(1))
-		                            .type_as(src.data)))
+	for i in range(max_len):
+		out = model.decode(memory, src_mask,Variable(ys),Variable(subsequent_mask(ys.size(1)).type_as(src.data)))
 		prob = model.generator(out[:, -1])
 		_, next_word = torch.max(prob, dim=1)
 		next_word = next_word.data[0]
 		ys = torch.cat([ys,
 		                torch.ones(1, 1).type_as(src.data).fill_(next_word)], dim=1)
 	return ys
+
+def beam_search_decode(model,src,src_mask,max_len):
+	memory = model.encode(src, src_mask)
+	ys = [0,torch.ones(1, 1).fill_(src[0][-1].cpu().numpy().item()).type_as(src.data)]
+	reserved_options = choose_options(model, memory, src, src_mask, ys)
+	for i in range(max_len-1):
+		tmp_options=[]
+		for j in range(len(reserved_options)):
+			tmp_options+=choose_options(model,memory,src,src_mask,reserved_options[j])
+		tmp_options=sorted(tmp_options,reverse=True)[:beam_search_number]
+		reserved_options=tmp_options
+	return reserved_options
+
+
+
+
+def choose_options(model,memory,src,src_mask,ys):
+	out = model.decode(memory, src_mask, Variable(ys[1]), Variable(subsequent_mask(ys[1].size(1)).type_as(src.data)))
+	prob = model.generator(out[:, -1])
+	dict = {}
+	for j in range(prob.size()[-1]):
+		dict[j] = prob[0][j].item()
+	sort_dict = sorted(zip(dict.values(), dict.keys()), reverse=True)
+	options = sort_dict[:beam_search_number]
+	result=[]
+	for i in range(beam_search_number):
+		result.append([ys[0]+options[i][0],torch.cat([ys[1], torch.ones(1, 1).type_as(src.data).fill_(options[i][1])], dim=1)])
+	return result
 
