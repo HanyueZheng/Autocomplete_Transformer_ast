@@ -1,5 +1,5 @@
 import torch.nn as nn
-from Sublayers import SublayerConnection
+from Sublayers import SublayerConnection, SublayerConnection4KG
 from Utils import clones
 
 
@@ -55,5 +55,6 @@ class EncoderLayer4KG(nn.Module):
 	def forward(self, hidden_states, attention_mask, hidden_states_ent, attention_mask_ent, ent_mask):
 		hidden_states = self.attention(hidden_states, hidden_states, hidden_states, attention_mask)
 		hidden_states_ent = self.attention(hidden_states_ent, hidden_states_ent, hidden_states_ent, attention_mask_ent)
-		# TODO ?
+		# TODO
+		hidden_states_ent = hidden_states_ent  # * ent_mask
 		return self.sublayer(hidden_states, hidden_states_ent)

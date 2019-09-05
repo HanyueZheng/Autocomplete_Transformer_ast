@@ -1,114 +1,182 @@
 import torch
 import sys
-import json
 import seaborn
+import json
 from torch.autograd import Variable
 from Batch import Batch
-from Optim import NoamOpt,LabelSmoothing
+from Optim import NoamOpt, LabelSmoothing
 from Model import make_model
-from Train import run_epoch,greedy_decode,SimpleLossCompute
-from Dataloader import DataLoader
-from HyperParameter import chunk_len,batch,nbatches,transformer_size,epoch_number,epoches_of_loss_record,predict_length
+from Train import run_epoch, greedy_decode, beam_search_decode, SimpleLossCompute
+from Dataloader import DataLoader_char, DataLoader_token, DataLoader_token_kg
+from HyperParameter import chunk_len, batch, nbatches, transformer_size, epoch_number, epoches_of_loss_record, \
+	predict_length
 # import numpy as np
 # from torch import nn
 # import torchsnooper
 # from torchtext import data, datasets
 # import spacy
-    
+
 seaborn.set_context(context="talk")
 
 #cre文本匹配
 #输入数据处理
-def data_gen(dataloader,batch,nbatches):
+def data_gen_char(dataloader, batch, nbatches):
     "为src-tgt复制任务生成随机数据"
     for i in range(nbatches):
         data_src = dataloader.next_chunk()[0].unsqueeze(0)
         data_tgt = dataloader.next_chunk()[1].unsqueeze(0)
-        for j in range(batch-1):
-            data_src=torch.cat([data_src,dataloader.next_chunk()[0].unsqueeze(0)],0)
-            data_tgt=torch.cat([data_tgt,dataloader.next_chunk()[1].unsqueeze(0)],0)
+        for j in range(batch - 1):
+            data_src = torch.cat([data_src, dataloader.next_chunk()[0].unsqueeze(0)], 0)
+            data_tgt = torch.cat([data_tgt, dataloader.next_chunk()[1].unsqueeze(0)], 0)
 
         src = Variable(data_src, requires_grad=False)
         tgt = Variable(data_tgt, requires_grad=False)
         yield Batch(src, tgt, 0)
 
 
+# 共有nbatches*batch*(chunklen-1)条数据
+def data_gen_token(dataloader, batch, nbatches, chunk_len, device):
+    "为src-tgt复制任务生成随机数据"
+    for i in range(nbatches):
+        data_src = torch.empty(1, chunk_len - 1).long().to(device)
+        data_tgt = torch.empty(1, 2).long().to(device)
+        for k in range(batch):
+            src_tgt_pair = dataloader.next_chunk()
+            for j in range(0, len(src_tgt_pair)):
+                data_src = torch.cat([data_src, src_tgt_pair[j][0].unsqueeze(0)])
+                data_tgt = torch.cat([data_tgt, src_tgt_pair[j][1].unsqueeze(0)])
+            data_src = data_src[1:]
+            data_tgt = data_tgt[1:]
+        src = Variable(data_src, requires_grad=False)
+        tgt = Variable(data_tgt, requires_grad=False)
+        yield Batch(src, tgt, -1)
+
+# 共有nbatches*batch*(chunklen-1)条数据
+def data_gen_token_kg(dataloader, batch, nbatches, chunk_len, device):
+    "为src-tgt复制任务生成随机数据"
+    for i in range(nbatches):
+        data_src = torch.empty(1, chunk_len - 1).long().to(device)
+        data_tgt = torch.empty(1, 2).long().to(device)
+        for k in range(batch):
+            src_tgt_pair = dataloader.next_chunk()
+            for j in range(0, len(src_tgt_pair)):
+                data_src = torch.cat([data_src, src_tgt_pair[j][0].unsqueeze(0)])
+                data_tgt = torch.cat([data_tgt, src_tgt_pair[j][1].unsqueeze(0)])
+            data_src = data_src[1:]
+            data_tgt = data_tgt[1:]
+        src = Variable(data_src, requires_grad=False)
+        tgt = Variable(data_tgt, requires_grad=False)
+        yield Batch(src, tgt, -1)
+
+
 if __name__ == "__main__":
 
     device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
-    # TODO
-    sys.argv.append('train')
-    sys.argv.append('sre.txt')
-    sys.argv.append('transformer100.model')
-    sys.argv.append('编号')
 
-    if(len(sys.argv)<2):
+    sys.argv.append('train')
+    sys.argv.append('EN-ATP-V226.txt')
+    sys.argv.append('token')
+    sys.argv.append('transformer3000.model')
+    sys.argv.append('The ATP software is the core')
+
+    if (len(sys.argv) < 2):
         print("usage: lstm [train file | inference (words vocabfile) ]")
         print("e.g. 1: lstm train cre-utf8.txt")
         print("e.g. 2: lstm inference cre-utf8.txt words")
         sys.exit(0)
 
     method = sys.argv[1]
-    if method == "train":
+    if (method == "train"):
         filename = sys.argv[2]
-        dataloader = DataLoader(filename, chunk_len, device)
-        # print(dataloader.vocabularyLoader.n_chars)
+        is_char_level = sys.argv[3] == 'char'
 
-        V = dataloader.vocabularyLoader.n_chars  #vocabolary size
+        if is_char_level:
+            # TODO
+            dataloader = DataLoader_char(filename, chunk_len, device)
+            V = dataloader.vocabularyLoader.n_chars  # vocabolary size
 
-        # kg_embed
-        with open("kg_embed/embedding.vec.json", "r", encoding='utf-8') as f:
-            lines = json.loads(f.read())
-            vecs = list()
-            # vecs.append([0] * 100)  # CLS
-            for (i, line) in enumerate(lines):
-                if line == "ent_embeddings":
-                    for vec in lines[line]:
-                        vec = [float(x) for x in vec]
-                        vecs.append(vec)
-        embed = torch.FloatTensor(vecs)
-        embed = torch.nn.Embedding.from_pretrained(embed)
-        # print(embed)  # Embedding(464, 100)
+            # kg_embed
+            # with open("kg_embed/embedding.vec.json", "r", encoding='utf-8') as f:
+            #     lines = json.loads(f.read())
+            #     vecs = list()
+            #     # vecs.append([0] * 100)  # CLS
+            #     for (i, line) in enumerate(lines):
+            #         if line == "ent_embeddings":
+            #             for vec in lines[line]:
+            #                 vec = [float(x) for x in vec]
+            #                 vecs.append(vec)
+            # embed = torch.FloatTensor(vecs)
+            # embed = torch.nn.Embedding.from_pretrained(embed)
+            # print(embed)  # Embedding(464, 100)
 
-        # TODO DataProcessor
-        
-        criterion = LabelSmoothing(size=V, padding_idx=0, smoothing=0.0)
-        criterion.cuda()
-        model = make_model(V, V, N=transformer_size)
-        model.cuda()
-        model_opt = NoamOpt(model.src_embed[0].d_model, 1, 400,
-                            torch.optim.Adam(model.parameters(), lr=0, betas=(0.9, 0.98), eps=1e-9))
+            criterion = LabelSmoothing(size=V, padding_idx=0, smoothing=0.0)
+            criterion.cuda()
+            model = make_model(V, V, N=transformer_size)
+            model.cuda()
+            model_opt = NoamOpt(model.src_embed[0].d_model, 1, 400,
+                                torch.optim.Adam(model.parameters(), lr=0, betas=(0.9, 0.98), eps=1e-9))
 
-        for epoch in range(epoch_number):
-            if epoch%epoches_of_loss_record==0:
-                f = open("procedure.txt", "a+")
-                f.write("step:%d \n" % epoch)
-                f.close()
-            print("step: ",epoch)
-            model.train()
-            run_epoch("train", data_gen(dataloader, batch, nbatches), model,
-                SimpleLossCompute(model.generator, criterion, model_opt),nbatches,epoch)
-            model.eval()
-            run_epoch("test ",data_gen(dataloader,batch,1), model,
-                    SimpleLossCompute(model.generator, criterion, None),nbatches,epoch)
+            for epoch in range(epoch_number):
+                if epoch % epoches_of_loss_record == 0:
+                    f = open("procedure.txt", "a+")
+                    f.write("step:%d \n" % epoch)
+                    f.close()
+                print("step: ", epoch)
+                model.train()
+                run_epoch("train", data_gen_char(dataloader, batch, nbatches), model,
+                          SimpleLossCompute(model.generator, criterion, model_opt), nbatches, epoch)
+                model.eval()
+                run_epoch("test ", data_gen_char(dataloader, batch, 1), model,
+                          SimpleLossCompute(model.generator, criterion, None), nbatches, epoch)
 
-    elif (method == "inference"):
-        filename = sys.argv[2]
-        trained_model_name=sys.argv[3]
-        words = sys.argv[4]
-        model = torch.load(trained_model_name).cuda()
-        model.eval()
-        dataloader = DataLoader(filename, chunk_len, device)
-        src = Variable(dataloader.vocabularyLoader.char_tensor(words).unsqueeze(0))
-        src_mask = Variable((src != 0).unsqueeze(-2))
-        output_embed=greedy_decode(model, src, src_mask, max_len=predict_length)[0].cpu().numpy()
-        result=""
-        for i in output_embed:
-            result += dataloader.vocabularyLoader.index2char[i]
-        print(result[1:])
+        else:
+            ents = []
+            with open("kg_embed/entity2id.txt") as fin:
+                fin.readline()
+                for line in fin:
+                    name, id = line.strip().split("\t")
+                    ents.append(name)
 
+            dataloader = DataLoader_token_kg(filename, ents, chunk_len, device)
+            V = dataloader.vocabularyLoader.n_tokens  # vocabolary size
 
+            # kg_embed
+            with open("kg_embed/embedding.vec.json", "r", encoding='utf-8') as f:
+                lines = json.loads(f.read())
+                vecs = list()
+                # vecs.append([0] * 100)  # CLS
+                for (i, line) in enumerate(lines):
+                    if line == "ent_embeddings":
+                        for vec in lines[line]:
+                            vec = [float(x) for x in vec]
+                            vecs.append(vec)
+            embed = torch.FloatTensor(vecs)
+            embed = torch.nn.Embedding.from_pretrained(embed)
+            # print(embed)  # Embedding(464, 100)
 
+            # input_ent = embed(input_ent + 1).to(device)  # -1 -> 0
+            # print("inputs_ent", input_ent)
+            # loss = model(input_ids, input_mask, input_ent.half(), ent_mask)
+
+            criterion = LabelSmoothing(size=V, padding_idx=0, smoothing=0.0)
+            criterion.cuda()
+            model = make_model(V, V, N=transformer_size)
+            model.cuda()
+            model_opt = NoamOpt(model.src_embed[0].d_model, 1, 400,
+                                torch.optim.Adam(model.parameters(), lr=0, betas=(0.9, 0.98), eps=1e-9))
+
+            for epoch in range(epoch_number):
+                if epoch % epoches_of_loss_record == 0:
+                    f = open("procedure.txt", "a+")
+                    f.write("step:%d \n" % epoch)
+                    f.close()
+                print("step: ", epoch)
+                model.train()
+                run_epoch("train", data_gen_token(dataloader, batch, nbatches, chunk_len, device), model,
+                          SimpleLossCompute(model.generator, criterion, model_opt), nbatches, epoch)
+                model.eval()
+                run_epoch("test ", data_gen_token(dataloader, batch, nbatches, chunk_len, device), model,
+                          SimpleLossCompute(model.generator, criterion, None), nbatches, epoch)
 
 
 
