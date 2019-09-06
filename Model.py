@@ -108,7 +108,7 @@ def subsequent_mask(size):
 # plt.imshow(subsequent_mask(20)[0])
 
 
-def make_model_kg(src_vocab, tgt_vocab, kg_embed, N=6, d_model=512, d_ff=2048, d_intermediate=100, h=8, dropout=0.1):
+def make_model_kg(src_vocab, tgt_vocab, N=6, d_model=512, d_ff=2048, d_intermediate=100, h=8, dropout=0.1):
 	"从超参数构造模型"
 	c = copy.deepcopy
 	attn = MultiHeadedAttention(h, d_model)

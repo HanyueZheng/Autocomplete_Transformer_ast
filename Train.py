@@ -112,7 +112,7 @@ def run_epoch_kg(stage, data_iter, model, loss_compute, nbatches, epoch=0):
 	tokens = 0
 	for i, batch in enumerate(data_iter):
 		# out = model(input_ids, segment_ids, input_mask, input_ent.half(), ent_mask, label_ids)
-		out = model.forward(batch.src, batch.trg, batch.src_mask, batch.trg_mask)
+		out = model.forward(batch.src, batch.trg,batch.ent, batch.src_mask, batch.trg_mask, batch.ent_mark)
 		loss = loss_compute(out, batch.trg_y, batch.ntokens)
 
 		total_loss += loss.detach().cpu().numpy()

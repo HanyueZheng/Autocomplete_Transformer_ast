@@ -84,7 +84,7 @@ class DataLoader_token_kg():
         # TODO : add [UNK]
         chunk, content = self.__random_chunk()
         ents_list = []
-        ents = [" "] * self.chunk_len
+        ents = ["UNK"] * self.chunk_len
         contents = ""
         for i in range(len(content)):
             contents = contents + content[i] + " "
@@ -98,8 +98,8 @@ class DataLoader_token_kg():
             if content.index(key) >= 0:
                 ents[content.index(key)] = key
         # TODO revise the ents
-
-        ents = self.vocabularyLoader.token_tensor(ents)
+        print(ents)
+        # ents = self.vocabularyLoader.token_tensor(ents)
         input_target_pair = []
         for i in range(1, self.chunk_len):
             input = torch.zeros(self.chunk_len - 1).long()
