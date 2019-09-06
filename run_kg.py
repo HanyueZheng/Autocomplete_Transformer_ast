@@ -3,10 +3,10 @@ import sys
 import seaborn
 import json
 from torch.autograd import Variable
-from Batch import Batch
+from Batch import Batch, Batch_kg
 from Optim import NoamOpt, LabelSmoothing
 from Model import make_model, make_model_kg
-from Train import run_epoch, greedy_decode, beam_search_decode, SimpleLossCompute
+from Train import run_epoch, greedy_decode, beam_search_decode, SimpleLossCompute, run_epoch_kg
 from Dataloader import DataLoader_char, DataLoader_token, DataLoader_token_kg
 from HyperParameter import chunk_len, batch, nbatches, transformer_size, epoch_number, epoches_of_loss_record, \
 	predict_length
@@ -51,12 +51,13 @@ def data_gen_token(dataloader, batch, nbatches, chunk_len, device):
         tgt = Variable(data_tgt, requires_grad=False)
         yield Batch(src, tgt, -1)
 
+
 # 共有nbatches*batch*(chunklen-1)条数据
 def data_gen_token_kg(dataloader, batch, nbatches, chunk_len, device):
     "为src-tgt复制任务生成随机数据"
     for i in range(nbatches):
         data_src = torch.empty(1, chunk_len - 1).long().to(device)
-        data_ent = torch.empty(1, chunk_len).long().to(device)
+        data_ent = torch.empty(1, chunk_len - 1).long().to(device)
         data_tgt = torch.empty(1, 2).long().to(device)
         for k in range(batch):
             src_tgt_pair = dataloader.next_chunk()
@@ -70,7 +71,7 @@ def data_gen_token_kg(dataloader, batch, nbatches, chunk_len, device):
         src = Variable(data_src, requires_grad=False)
         ent = Variable(data_ent, requires_grad=False)
         tgt = Variable(data_tgt, requires_grad=False)
-        yield Batch(src, ent, tgt, -1)
+        yield Batch_kg(src, ent, tgt, -1)
 
 
 if __name__ == "__main__":
@@ -144,27 +145,9 @@ if __name__ == "__main__":
             dataloader = DataLoader_token_kg(filename, ents, chunk_len, device)
             V = dataloader.vocabularyLoader.n_tokens  # vocabolary size
 
-            # kg_embed
-            with open("kg_embed/embedding.vec.json", "r", encoding='utf-8') as f:
-                lines = json.loads(f.read())
-                vecs = list()
-                # vecs.append([0] * 100)  # CLS
-                for (i, line) in enumerate(lines):
-                    if line == "ent_embeddings":
-                        for vec in lines[line]:
-                            vec = [float(x) for x in vec]
-                            vecs.append(vec)
-            embed = torch.FloatTensor(vecs)
-            embed = torch.nn.Embedding.from_pretrained(embed)
-            # print(embed)  # Embedding(464, 100)
-
-            # input_ent = embed(input_ent + 1).to(device)  # -1 -> 0
-            # print("inputs_ent", input_ent)
-            # loss = model(input_ids, input_mask, input_ent.half(), ent_mask)
-
             criterion = LabelSmoothing(size=V, padding_idx=0, smoothing=0.0)
             criterion.cuda()
-            model = make_model_kg(V, V, N=transformer_size)
+            model = make_model_kg(V, V, "kg_embed/embedding.vec.json", N=transformer_size)
             model.cuda()
             model_opt = NoamOpt(model.src_embed[0].d_model, 1, 400,
                                 torch.optim.Adam(model.parameters(), lr=0, betas=(0.9, 0.98), eps=1e-9))
@@ -176,10 +159,10 @@ if __name__ == "__main__":
                     f.close()
                 print("step: ", epoch)
                 model.train()
-                run_epoch("train", data_gen_token_kg(dataloader, batch, nbatches, chunk_len, device), model,
+                run_epoch_kg("train", data_gen_token_kg(dataloader, batch, nbatches, chunk_len, device), model,
                           SimpleLossCompute(model.generator, criterion, model_opt), nbatches, epoch)
                 model.eval()
-                run_epoch("test ", data_gen_token_kg(dataloader, batch, nbatches, chunk_len, device), model,
+                run_epoch_kg("test ", data_gen_token_kg(dataloader, batch, nbatches, chunk_len, device), model,
                           SimpleLossCompute(model.generator, criterion, None), nbatches, epoch)
 
 

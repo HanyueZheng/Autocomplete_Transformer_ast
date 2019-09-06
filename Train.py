@@ -90,7 +90,7 @@ def beam_search_decode(model,src,src_mask,max_len):
 	return reserved_options
 
 
-def choose_options(model,memory,src,src_mask,ys):
+def choose_options(model, memory, src, src_mask, ys):
 	out = model.decode(memory, src_mask, Variable(ys[1]), Variable(subsequent_mask(ys[1].size(1)).type_as(src.data)))
 	prob = model.generator(out[:, -1])
 	dict = {}
@@ -111,8 +111,7 @@ def run_epoch_kg(stage, data_iter, model, loss_compute, nbatches, epoch=0):
 	total_loss = 0
 	tokens = 0
 	for i, batch in enumerate(data_iter):
-		# out = model(input_ids, segment_ids, input_mask, input_ent.half(), ent_mask, label_ids)
-		out = model.forward(batch.src, batch.trg,batch.ent, batch.src_mask, batch.trg_mask, batch.ent_mark)
+		out = model.forward(batch.src, batch.ent, batch.trg, batch.src_mask, batch.ent_mask, batch.trg_mask)
 		loss = loss_compute(out, batch.trg_y, batch.ntokens)
 
 		total_loss += loss.detach().cpu().numpy()

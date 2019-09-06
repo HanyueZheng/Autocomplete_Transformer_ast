@@ -92,17 +92,16 @@ class DataLoader_token_kg():
         for i in range(len(self.kg)):
             if contents.find(" " + self.kg[i] + " ") != -1:
                 ents_list.append(self.kg[i])
-        # print(content)
         for i in range(len(ents_list)):
             key = ents_list[i].strip().split()
             if content.index(key[0]) >= 0:
                 ents[content.index(key[0])] = self.kg.index(" ".join(key))
-        # print(ents)
         ents = torch.Tensor(ents).long()
         input_target_pair = []
         for i in range(1, self.chunk_len):
             input = torch.zeros(self.chunk_len - 1).long()
-            ent = torch.zeros(self.chunk_len).long()
+            # length of ent?
+            ent = torch.zeros(self.chunk_len - 1).long()
             for j in range(self.chunk_len - i - 1):
                 input[j] = self.vocabularyLoader.n_tokens - 1
             input[-i:] = chunk[:i]
@@ -111,7 +110,7 @@ class DataLoader_token_kg():
             input = input.to(self.device)
             target = target.to(self.device)
             ent = ent.to(self.device)
-            input_target_pair.append((input, target, ent))
+            input_target_pair.append((input, ent, target))
         return input_target_pair
 
     def __random_chunk(self):
