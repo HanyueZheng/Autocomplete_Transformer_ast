@@ -45,20 +45,26 @@ class DataLoader_token():
         self.device = device
         self.vocabularyLoader = VocabularyLoader_token(filename, self.device)
 
+    # 1/1,2/1,3/1,4/1...n/1 输入形式
+    # def next_chunk(self):
+    #     chunk = self.__random_chunk()
+    #     input_target_pair = []
+    #     for i in range(1,self.chunk_len):
+    #         input = torch.zeros(self.chunk_len-1).long()
+    #         for j in range(self.chunk_len-i-1):
+    #             input[j]=self.vocabularyLoader.n_tokens-1
+    #         input[-i:] = chunk[:i]
+    #         target = chunk[i-1:i+1]
+    #         input=input.to(self.device)
+    #         target=target.to(self.device)
+    #         input_target_pair.append((input,target))
+    #     return input_target_pair
 
     def next_chunk(self):
         chunk = self.__random_chunk()
-        input_target_pair = []
-        for i in range(1,self.chunk_len):
-            input = torch.zeros(self.chunk_len-1).long()
-            for j in range(self.chunk_len-i-1):
-                input[j]=self.vocabularyLoader.n_tokens-1
-            input[-i:] = chunk[:i]
-            target = chunk[i-1:i+1]
-            input=input.to(self.device)
-            target=target.to(self.device)
-            input_target_pair.append((input,target))
-        return input_target_pair
+        input = chunk[:-1]
+        target = chunk[1:]
+        return input, target
 
     def __random_chunk(self):
         start_index = random.randint(0, self.file_len-self.chunk_len)

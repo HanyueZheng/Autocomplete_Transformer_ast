@@ -21,7 +21,7 @@ seaborn.set_context(context="talk")
 # cre文本匹配
 # 输入数据处理
 # 共有nbatches*batch条数据
-def data_gen_char(dataloader, batch, nbatches):
+def data_gen_overlap(dataloader, batch, nbatches):
 	"为src-tgt复制任务生成随机数据"
 	for i in range(nbatches):
 		data_src = dataloader.next_chunk()[0].unsqueeze(0)
@@ -35,7 +35,7 @@ def data_gen_char(dataloader, batch, nbatches):
 		yield Batch(src, tgt, 0)
 
 # 共有nbatches*batch*(chunklen-1)条数据
-def data_gen_token(dataloader, batch, nbatches,chunk_len,device):
+def data_gen_one(dataloader, batch, nbatches,chunk_len,device):
 	"为src-tgt复制任务生成随机数据"
 	for i in range(nbatches):
 		data_src=torch.empty(1,chunk_len-1).long().to(device)
@@ -58,7 +58,7 @@ if __name__ == "__main__":
 	sys.argv.append('train')
 	sys.argv.append('EN-ATP-V226.txt')
 	sys.argv.append('token')
-	sys.argv.append('transformer3000.model')
+	sys.argv.append('transformer1000.model')
 	sys.argv.append('The ATP software is the core')
 	
 	if (len(sys.argv) < 2):
@@ -90,10 +90,10 @@ if __name__ == "__main__":
 					f.close()
 				print("step: ", epoch)
 				model.train()
-				run_epoch("train", data_gen_char(dataloader, batch, nbatches), model,
+				run_epoch("train", data_gen_overlap(dataloader, batch, nbatches), model,
 				          SimpleLossCompute(model.generator, criterion, model_opt), nbatches, epoch)
 				model.eval()
-				run_epoch("test ", data_gen_char(dataloader, batch, 1), model,
+				run_epoch("test ", data_gen_overlap(dataloader, batch, nbatches), model,
 				          SimpleLossCompute(model.generator, criterion, None), nbatches, epoch)
 
 		else:
@@ -114,10 +114,10 @@ if __name__ == "__main__":
 					f.close()
 				print("step: ", epoch)
 				model.train()
-				run_epoch("train", data_gen_token(dataloader, batch, nbatches,chunk_len,device), model,
+				run_epoch("train", data_gen_overlap(dataloader, batch, nbatches), model,
 				          SimpleLossCompute(model.generator, criterion, model_opt), nbatches, epoch)
 				model.eval()
-				run_epoch("test ", data_gen_token(dataloader, batch, nbatches,chunk_len,device), model,
+				run_epoch("test ", data_gen_overlap(dataloader, batch, nbatches), model,
 				          SimpleLossCompute(model.generator, criterion, None), nbatches, epoch)
 	
 	

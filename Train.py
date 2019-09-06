@@ -87,9 +87,6 @@ def beam_search_decode(model,src,src_mask,max_len):
 		reserved_options=tmp_options
 	return reserved_options
 
-
-
-
 def choose_options(model,memory,src,src_mask,ys):
 	out = model.decode(memory, src_mask, Variable(ys[1]), Variable(subsequent_mask(ys[1].size(1)).type_as(src.data)))
 	prob = model.generator(out[:, -1])
