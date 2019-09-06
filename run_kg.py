@@ -5,7 +5,7 @@ import json
 from torch.autograd import Variable
 from Batch import Batch
 from Optim import NoamOpt, LabelSmoothing
-from Model import make_model
+from Model import make_model, make_model_kg
 from Train import run_epoch, greedy_decode, beam_search_decode, SimpleLossCompute
 from Dataloader import DataLoader_char, DataLoader_token, DataLoader_token_kg
 from HyperParameter import chunk_len, batch, nbatches, transformer_size, epoch_number, epoches_of_loss_record, \
@@ -56,17 +56,21 @@ def data_gen_token_kg(dataloader, batch, nbatches, chunk_len, device):
     "为src-tgt复制任务生成随机数据"
     for i in range(nbatches):
         data_src = torch.empty(1, chunk_len - 1).long().to(device)
+        data_ent = torch.empty(1, chunk_len).long().to(device)
         data_tgt = torch.empty(1, 2).long().to(device)
         for k in range(batch):
             src_tgt_pair = dataloader.next_chunk()
             for j in range(0, len(src_tgt_pair)):
                 data_src = torch.cat([data_src, src_tgt_pair[j][0].unsqueeze(0)])
-                data_tgt = torch.cat([data_tgt, src_tgt_pair[j][1].unsqueeze(0)])
+                data_ent = torch.cat([data_ent, src_tgt_pair[j][1].unsqueeze(0)])
+                data_tgt = torch.cat([data_tgt, src_tgt_pair[j][2].unsqueeze(0)])
             data_src = data_src[1:]
+            data_ent = data_ent[1:]
             data_tgt = data_tgt[1:]
         src = Variable(data_src, requires_grad=False)
+        ent = Variable(data_ent, requires_grad=False)
         tgt = Variable(data_tgt, requires_grad=False)
-        yield Batch(src, tgt, -1)
+        yield Batch(src, ent, tgt, -1)
 
 
 if __name__ == "__main__":
@@ -160,7 +164,7 @@ if __name__ == "__main__":
 
             criterion = LabelSmoothing(size=V, padding_idx=0, smoothing=0.0)
             criterion.cuda()
-            model = make_model(V, V, N=transformer_size)
+            model = make_model_kg(V, V, N=transformer_size)
             model.cuda()
             model_opt = NoamOpt(model.src_embed[0].d_model, 1, 400,
                                 torch.optim.Adam(model.parameters(), lr=0, betas=(0.9, 0.98), eps=1e-9))
@@ -172,10 +176,10 @@ if __name__ == "__main__":
                     f.close()
                 print("step: ", epoch)
                 model.train()
-                run_epoch("train", data_gen_token(dataloader, batch, nbatches, chunk_len, device), model,
+                run_epoch("train", data_gen_token_kg(dataloader, batch, nbatches, chunk_len, device), model,
                           SimpleLossCompute(model.generator, criterion, model_opt), nbatches, epoch)
                 model.eval()
-                run_epoch("test ", data_gen_token(dataloader, batch, nbatches, chunk_len, device), model,
+                run_epoch("test ", data_gen_token_kg(dataloader, batch, nbatches, chunk_len, device), model,
                           SimpleLossCompute(model.generator, criterion, None), nbatches, epoch)
 
 

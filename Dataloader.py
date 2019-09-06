@@ -84,22 +84,21 @@ class DataLoader_token_kg():
         # TODO : add [UNK]
         chunk, content = self.__random_chunk()
         ents_list = []
-        ents = ["UNK"] * self.chunk_len
+        ents = [24] * self.chunk_len  # UNK = 24 to be modified
         contents = ""
         for i in range(len(content)):
             contents = contents + content[i] + " "
-        # print(contents)
+        # TODO modify
         for i in range(len(self.kg)):
             if contents.find(" " + self.kg[i] + " ") != -1:
                 ents_list.append(self.kg[i])
-        # print(ents_list)
+        # print(content)
         for i in range(len(ents_list)):
-            key = ents_list[i].strip().split()[0]
-            if content.index(key) >= 0:
-                ents[content.index(key)] = key
-        # TODO revise the ents
-        print(ents)
-        # ents = self.vocabularyLoader.token_tensor(ents)
+            key = ents_list[i].strip().split()
+            if content.index(key[0]) >= 0:
+                ents[content.index(key[0])] = self.kg.index(" ".join(key))
+        # print(ents)
+        ents = torch.Tensor(ents).long()
         input_target_pair = []
         for i in range(1, self.chunk_len):
             input = torch.zeros(self.chunk_len - 1).long()
