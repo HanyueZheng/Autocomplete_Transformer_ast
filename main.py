@@ -13,7 +13,7 @@ import numpy as np
 from torch import nn
 import torchsnooper
 from torchtext import data, datasets
-import spacy
+# import spacy
 
 seaborn.set_context(context="talk")
 
@@ -81,7 +81,7 @@ if __name__ == "__main__":
 			model = make_model(V, V, N=transformer_size)
 			model.cuda()
 			model_opt = NoamOpt(model.src_embed[0].d_model, 1, 400,
-			                    torch.optim.Adam(model.parameters(), lr=0, betas=(0.9, 0.98), eps=1e-9))
+								torch.optim.Adam(model.parameters(), lr=0, betas=(0.9, 0.98), eps=1e-9))
 			
 			for epoch in range(epoch_number):
 				if epoch % epoches_of_loss_record == 0:

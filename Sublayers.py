@@ -4,6 +4,15 @@ import torch.nn.functional as F
 import math
 from Utils import clones
 
+
+def gelu(x):
+    """Implementation of the gelu activation function.
+        For information: OpenAI GPT's gelu is slightly different (and gives slightly different results):
+        0.5 * x * (1 + torch.tanh(math.sqrt(2 / math.pi) * (x + 0.044715 * torch.pow(x, 3))))
+    """
+    return x * 0.5 * (1.0 + torch.erf(x / math.sqrt(2.0)))
+
+
 # 在两个子层中的每一个子层使用一个残差连接，然后进行层归一化
 class LayerNorm(nn.Module):
 	"构建层归一化模块"
@@ -127,7 +136,7 @@ class IntermediateLayer(nn.Module):
 	def __init__(self, size, intermediate_size):
 		super(IntermediateLayer, self).__init__()
 		self.dense = nn.Linear(size, intermediate_size)
-		self.dense_ent = nn.Linear(100, intermediate_size)
+		self.dense_ent = nn.Linear(512, intermediate_size)
 
 		# Information Fusion
 		self.intermediate_act_fn = gelu
@@ -146,19 +155,19 @@ class SublayerConnection4KG(nn.Module):
 		super(SublayerConnection4KG, self).__init__()
 		self.intermediate = IntermediateLayer(size, intermediate_size)
 		self.dense = nn.Linear(size, intermediate_size)
-		self.dense_ent = nn.Linear(100, intermediate_size)
+		self.dense_ent = nn.Linear(512, intermediate_size)
 		self.norm = LayerNorm(size)
-		self.norm_ent = LayerNorm(100)
+		self.norm_ent = LayerNorm(512)
 		self.dropout = nn.Dropout(dropout)
 
 	def forward(self, attention_output, attention_output_ent):
 		intermediate_output = self.intermediate(attention_output, attention_output_ent)
 		hidden_states = self.dense(intermediate_output)
 		hidden_states = self.dropout(hidden_states)
-		hidden_states = self.LayerNorm(hidden_states + attention_output)
+		hidden_states = self.norm(hidden_states + attention_output)
 
 		hidden_states_ent = self.dense_ent(intermediate_output)
 		hidden_states_ent = self.dropout(hidden_states_ent)
-		hidden_states_ent = self.LayerNorm_ent(hidden_states_ent + attention_output_ent)
+		hidden_states_ent = self.norm_ent(hidden_states_ent + attention_output_ent)
 
 		return hidden_states, hidden_states_ent

@@ -32,7 +32,6 @@ class VocabularyLoader_char():
         return Variable(tensor).to(self.device)
 
 
-
 class VocabularyLoader_token():
     def __init__(self, filename, device):
         self.token_table = {}
@@ -41,8 +40,8 @@ class VocabularyLoader_token():
         self.device = device
         f = open(filename, 'r', encoding='UTF-8')
         for lines in f:
-            ls = lines.replace('\n',' ').replace('\t',' ')
-            token_lists=ls.split(' ')
+            ls = lines.replace('\n', ' ').replace('\t', ' ')
+            token_lists = ls.split(' ')
             token_lists = [i for i in token_lists if (len(str(i))) != 0]
             for i in token_lists:
                 if i is not '':
