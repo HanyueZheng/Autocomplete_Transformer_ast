@@ -24,11 +24,13 @@ seaborn.set_context(context="talk")
 def data_gen_overlap(dataloader, batch, nbatches):
 	"为src-tgt复制任务生成随机数据"
 	for i in range(nbatches):
-		data_src = dataloader.next_chunk()[0].unsqueeze(0)
-		data_tgt = dataloader.next_chunk()[1].unsqueeze(0)
+		src_tgt_pair = dataloader.next_chunk()
+		data_src = src_tgt_pair[0].unsqueeze(0)
+		data_tgt = src_tgt_pair[1].unsqueeze(0)
 		for j in range(batch - 1):
-			data_src = torch.cat([data_src, dataloader.next_chunk()[0].unsqueeze(0)], 0)
-			data_tgt = torch.cat([data_tgt, dataloader.next_chunk()[1].unsqueeze(0)], 0)
+			src_tgt_pair = dataloader.next_chunk()
+			data_src = torch.cat([data_src, src_tgt_pair[0].unsqueeze(0)], 0)
+			data_tgt = torch.cat([data_tgt, src_tgt_pair[1].unsqueeze(0)], 0)
 		
 		src = Variable(data_src, requires_grad=False)
 		tgt = Variable(data_tgt, requires_grad=False)

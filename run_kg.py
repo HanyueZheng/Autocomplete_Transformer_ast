@@ -2,6 +2,7 @@ import torch
 import sys
 import seaborn
 import json
+import os
 from torch.autograd import Variable
 from Batch import Batch, Batch_kg
 from Optim import NoamOpt, LabelSmoothing
@@ -9,11 +10,11 @@ from Model import make_model, make_model_kg
 from Train import run_epoch, greedy_decode, beam_search_decode, SimpleLossCompute, run_epoch_kg, beam_search_decode_kg
 from Dataloader import DataLoader_char, DataLoader_token, DataLoader_token_kg
 from HyperParameter import chunk_len, batch, nbatches, transformer_size, epoch_number, epoches_of_loss_record, \
-    predict_length
+    predict_length,procedure
 
 
 seaborn.set_context(context="talk")
-
+os.environ["CUDA_VISIBLE_DEVICES"]="1"
 
 # cre文本匹配
 # 输入数据处理
@@ -21,18 +22,15 @@ seaborn.set_context(context="talk")
 def data_gen_token_kg(dataloader, batch, nbatches, chunk_len, device):
     "为src-tgt复制任务生成随机数据"
     for i in range(nbatches):
-        data_src = torch.empty(1, chunk_len - 1).long().to(device)
-        data_ent = torch.empty(1, chunk_len - 1).long().to(device)
-        data_tgt = torch.empty(1, 2).long().to(device)
-        for k in range(batch):
+        src_tgt_pair = dataloader.next_chunk()
+        data_src = src_tgt_pair[0].unsqueeze(0)
+        data_ent = src_tgt_pair[1].unsqueeze(0)
+        data_tgt = src_tgt_pair[2].unsqueeze(0)
+        for k in range(batch-1):
             src_tgt_pair = dataloader.next_chunk()
-            for j in range(0, len(src_tgt_pair)):
-                data_src = torch.cat([data_src, src_tgt_pair[j][0].unsqueeze(0)])
-                data_ent = torch.cat([data_ent, src_tgt_pair[j][1].unsqueeze(0)])
-                data_tgt = torch.cat([data_tgt, src_tgt_pair[j][2].unsqueeze(0)])
-            data_src = data_src[1:]
-            data_ent = data_ent[1:]
-            data_tgt = data_tgt[1:]
+            data_src = torch.cat([data_src, src_tgt_pair[0].unsqueeze(0)])
+            data_ent = torch.cat([data_ent, src_tgt_pair[1].unsqueeze(0)])
+            data_tgt = torch.cat([data_tgt, src_tgt_pair[2].unsqueeze(0)])
         src = Variable(data_src, requires_grad=False)
         ent = Variable(data_ent, requires_grad=False)
         tgt = Variable(data_tgt, requires_grad=False)
@@ -43,13 +41,12 @@ if __name__ == "__main__":
 
     device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 
-    # sys.argv.append('train')
-    sys.argv.append('inference')
+    sys.argv.append('train')
+    #sys.argv.append(procedure)
     sys.argv.append('EN-ATP-V226.txt')
     sys.argv.append('token')
-    sys.argv.append('transformer200.model')
-    sys.argv.append('The ATP software is the core')
-
+    sys.argv.append('transformer_kg_1500_25_19_19.model')
+    sys.argv.append('ATP software shall use the over-estimation model')
     if (len(sys.argv) < 2):
         print("usage: lstm [train file | inference (words vocabfile) ]")
         print("e.g. 1: lstm train cre-utf8.txt")
@@ -73,20 +70,6 @@ if __name__ == "__main__":
             # TODO
             dataloader = DataLoader_char(filename, chunk_len, device)
             V = dataloader.vocabularyLoader.n_chars  # vocabolary size
-
-            # kg_embed
-            # with open("kg_embed/embedding.vec.json", "r", encoding='utf-8') as f:
-            #     lines = json.loads(f.read())
-            #     vecs = list()
-            #     # vecs.append([0] * 100)  # CLS
-            #     for (i, line) in enumerate(lines):
-            #         if line == "ent_embeddings":
-            #             for vec in lines[line]:
-            #                 vec = [float(x) for x in vec]
-            #                 vecs.append(vec)
-            # embed = torch.FloatTensor(vecs)
-            # embed = torch.nn.Embedding.from_pretrained(embed)
-            # print(embed)  # Embedding(464, 100)
 
             criterion = LabelSmoothing(size=V, padding_idx=0, smoothing=0.0)
             criterion.cuda()
@@ -114,9 +97,9 @@ if __name__ == "__main__":
             V = dataloader.vocabularyLoader.n_tokens  # vocabolary size
 
             criterion = LabelSmoothing(size=V, padding_idx=0, smoothing=0.0)
-            criterion.cuda()
+            criterion.to(device)
             model = make_model_kg(V, V, "kg_embed/embedding.vec.json", N=transformer_size)
-            model.cuda()
+            model.to(device)
             model_opt = NoamOpt(model.src_embed[0].d_model, 1, 400,
                                 torch.optim.Adam(model.parameters(), lr=0, betas=(0.9, 0.98), eps=1e-9))
 
@@ -152,7 +135,7 @@ if __name__ == "__main__":
             print(result[1:])
 
         else:
-            model = torch.load(trained_model_name).cuda()
+            model = torch.load(trained_model_name, map_location='cpu')
             model.eval()
             dataloader = DataLoader_token_kg(filename, ents, chunk_len, device)
             word_list = words.replace('\n', ' ').replace('\t', ' ').split(' ')

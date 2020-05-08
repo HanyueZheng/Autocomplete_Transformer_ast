@@ -848,7 +848,7 @@ If the calculated movement exceeds the default one  ,  ATP shall set the wheel k
  5  .  1  2  .  1  . 	Inputs
  5  .  1  2  .  2  . 	Locals
  5  .  1  2  .  3  . 	Processing
-In the main task of each cycle  ,  ATP need to estimate the odometer state and calculate WheelMaximumMovement和WheelMinimumMovement  ,  based on the sensor test results and the matching status between cog count and cog number of odometer .  As shown in Figure  5  7  there are several odometer state : 
+In the main task of each cycle  ,  ATP need to estimate the odometer state and calculate WheelMaximumMovement and WheelMinimumMovement  ,  based on the sensor test results and the matching status between cog count and cog number of odometer .  As shown in Figure  5  7  there are several odometer state :
 NOT_INITIALIZED  ,  just after ATP powered up  ,  the odometer is not initialized .  At this moment  ,  ATP should overvalue the wheel displacement to ensure the safety only when the sensor detected that the wheel is completely static . 
 WAITING_COG_POSITION_CODE_READY  ,  the odometer starts rolling and continues to roll eight cogs .  During this process  ,  ATP should over-estimate wheel displacement to ensure the safety .  
 INITIALIZED  ,  when odometer has initialized  ,  it enters into the normal working status .  If ATP detected the cog count and cog number is matching or the wheel is static  ,  it can calculate the wheel displacement by using the odometer value  ,  otherwise  ,  it should over- estimate the displacement . 

@@ -1,6 +1,5 @@
 from torch.autograd import Variable
 from Model import subsequent_mask
-import torchsnooper
 
 
 # Batches and Masking
@@ -51,6 +50,31 @@ class Batch_kg:
         self.ent = ent
         self.trg = trg
         self.src_mask = (src != pad).unsqueeze(-2)
+        self.ent_mask = None
+        if self.trg is not None:
+            self.trg = trg[:, :-1]
+            self.trg_y = trg[:, 1:]
+            self.trg_mask = \
+                self.make_std_mask(self.trg, pad)
+            self.ntokens = (self.trg_y != pad).data.sum()
+
+    @staticmethod
+    def make_std_mask(tgt, pad):
+        "创建一个mask来隐藏填充和将来的单词"
+        tgt_mask = (tgt != pad).unsqueeze(-2)
+        tgt_mask = tgt_mask & Variable(
+            subsequent_mask(tgt.size(-1)).type_as(tgt_mask.data))
+        return tgt_mask
+
+
+class Batch_ast:
+    def __init__(self, src, ent, ast, trg=None, pad=0):
+        self.src = src
+        self.ent = ent
+        self.trg = trg
+        self.ast = ast
+        self.src_mask = (src != pad).unsqueeze(-2)
+        self.ast_mask = (ast != pad).unsqueeze(-2)
         self.ent_mask = None
         if self.trg is not None:
             self.trg = trg[:, :-1]

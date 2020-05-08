@@ -7,7 +7,7 @@ from torch.autograd import Variable
 from Model import subsequent_mask
 import matplotlib.pyplot as plt
 import seaborn
-from HyperParameter import epoches_of_loss_record, epoches_of_model_save, beam_search_number
+from HyperParameter import epoches_of_loss_record, epoches_of_model_save, beam_search_number, A_end_index, B_start_index,chunk_len
 
 # =============================================================================
 #
@@ -31,17 +31,19 @@ def run_epoch(stage, data_iter, model, loss_compute, nbatches, epoch=0):
         total_loss += loss.detach().cpu().numpy()
         total_tokens += batch.ntokens.cpu().numpy()
         tokens += batch.ntokens.cpu().numpy()
-        if i==nbatches-1:
+        if i == nbatches - 1:
             elapsed = time.time() - start
-            print("%s  Loss: %f Tokens per Sec: %f" % (stage, loss.detach().cpu().numpy() / batch.ntokens.cpu().numpy(), tokens / elapsed))
-            if epoch%epoches_of_loss_record==0:
+            print("%s  Loss: %f Time: %f Tokens per Sec: %f" % (
+            stage, loss.detach().cpu().numpy() / batch.ntokens.cpu().numpy(), elapsed, tokens / elapsed))
+            if epoch % epoches_of_loss_record == 0:
                 f = open("procedure.txt", "a+")
-                f.write("%s  Loss: %f Tokens per Sec: %f \n" % (stage, loss.detach().cpu().numpy() / batch.ntokens.cpu().numpy(), tokens / elapsed))
+                f.write("%s  Loss: %f Time: %f Tokens per Sec: %f" % (
+                stage, loss.detach().cpu().numpy() / batch.ntokens.cpu().numpy(), elapsed, tokens / elapsed))
                 f.close()
             start = time.time()
             tokens = 0
-    if epoch % epoches_of_model_save==0:
-        torch.save(model, "transformer" + "{}".format(epoch) + ".model")
+    if epoch != 0 and epoch % epoches_of_model_save == 0:
+        torch.save(model,"transformer_" + "{}".format(epoch) + "_" + str(chunk_len) + "_" + str(A_end_index) + "_" + str(B_start_index) + ".model")
 
 
 # 损失计算
@@ -117,17 +119,48 @@ def run_epoch_kg(stage, data_iter, model, loss_compute, nbatches, epoch=0):
         total_loss += loss.detach().cpu().numpy()
         total_tokens += batch.ntokens.cpu().numpy()
         tokens += batch.ntokens.cpu().numpy()
-        if i == nbatches-1:
+        if i == nbatches - 1:
             elapsed = time.time() - start
-            print("%s  Loss: %f Tokens per Sec: %f" % (stage, loss.detach().cpu().numpy() / batch.ntokens.cpu().numpy(), tokens / elapsed))
-            if epoch%epoches_of_loss_record==0:
+            print("%s  Loss: %f Time: %f Tokens per Sec: %f" % (
+            stage, loss.detach().cpu().numpy() / batch.ntokens.cpu().numpy(), elapsed, tokens / elapsed))
+            if epoch % epoches_of_loss_record == 0:
                 f = open("procedure.txt", "a+")
-                f.write("%s  Loss: %f Tokens per Sec: %f \n" % (stage, loss.detach().cpu().numpy() / batch.ntokens.cpu().numpy(), tokens / elapsed))
+                f.write("%s  Loss: %f Time: %f Tokens per Sec: %f" % (
+                stage, loss.detach().cpu().numpy() / batch.ntokens.cpu().numpy(), elapsed, tokens / elapsed))
                 f.close()
             start = time.time()
             tokens = 0
-    if epoch%epoches_of_model_save==0:
-        torch.save(model, "transformer" + "{}".format(epoch) + ".model")
+    if epoch != 0 and epoch % epoches_of_model_save == 0:
+        torch.save(model,"transformer_kg_" + "{}".format(epoch) + "_" + str(chunk_len) + "_" + str(A_end_index) + "_" + str(B_start_index) + ".model")
+
+def run_epoch_ast(stage, data_iter, model, loss_compute, nbatches, epoch=0):
+    "Standard Training and Logging Function"
+    start = time.time()
+    total_tokens = 0
+    total_loss = 0
+    tokens = 0
+    for i, batch in enumerate(data_iter):
+        out = model.forward(batch.src, batch.ast, batch.ent, batch.trg, batch.src_mask, batch.ast_mask, batch.ent_mask, batch.trg_mask)
+        loss = loss_compute(out, batch.trg_y, batch.ntokens)
+
+        total_loss += loss.detach().cpu().numpy()
+        total_tokens += batch.ntokens.cpu().numpy()
+        tokens += batch.ntokens.cpu().numpy()
+        if i == nbatches - 1:
+            elapsed = time.time() - start
+            print("%s  Loss: %f Time: %f Tokens per Sec: %f" % (
+            stage, loss.detach().cpu().numpy() / batch.ntokens.cpu().numpy(), elapsed, tokens / elapsed))
+            if epoch % epoches_of_loss_record == 0:
+                f = open("procedure.txt", "a+")
+                f.write("%s  Loss: %f Time: %f Tokens per Sec: %f" % (
+                stage, loss.detach().cpu().numpy() / batch.ntokens.cpu().numpy(), elapsed, tokens / elapsed))
+                f.close()
+            start = time.time()
+            tokens = 0
+    if epoch != 0 and epoch % epoches_of_model_save == 0:
+        torch.save(model,"transformer_kg_" + "{}".format(epoch) + "_" + str(chunk_len) + "_" + str(A_end_index) + "_" + str(B_start_index) + ".model")
+
+
 
 
 def beam_search_decode_kg(model, src, src_mask, ent, ent_mask, max_len):
