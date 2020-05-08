@@ -2,21 +2,8 @@
 <project version="4">
   <component name="ChangeListManager">
     <list default="true" id="f38f39fc-335b-4c1e-bc79-fb99d27d9532" name="Default" comment="ast">
-      <change type="DELETED" beforePath="$PROJECT_DIR$/Paths.txt" afterPath="" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/.idea/misc.xml" afterPath="$PROJECT_DIR$/.idea/misc.xml" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/.idea/transformer.iml" afterPath="$PROJECT_DIR$/.idea/transformer.iml" />
+      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/run_ast.py" />
       <change type="MODIFICATION" beforePath="$PROJECT_DIR$/.idea/workspace.xml" afterPath="$PROJECT_DIR$/.idea/workspace.xml" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/Batch.py" afterPath="$PROJECT_DIR$/Batch.py" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/Dataloader.py" afterPath="$PROJECT_DIR$/Dataloader.py" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/EN-ATP-V226.txt" afterPath="$PROJECT_DIR$/EN-ATP-V226.txt" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/HyperParameter.py" afterPath="$PROJECT_DIR$/HyperParameter.py" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/Layers.py" afterPath="$PROJECT_DIR$/Layers.py" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/Model.py" afterPath="$PROJECT_DIR$/Model.py" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/Train.py" afterPath="$PROJECT_DIR$/Train.py" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/VocabularyLoader.py" afterPath="$PROJECT_DIR$/VocabularyLoader.py" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/bleu.py" afterPath="$PROJECT_DIR$/bleu.py" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/main.py" afterPath="$PROJECT_DIR$/main.py" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/run_kg.py" afterPath="$PROJECT_DIR$/run_kg.py" />
     </list>
     <option name="EXCLUDED_CONVERTED_TO_IGNORED" value="true" />
     <option name="TRACKING_ENABLED" value="true" />
@@ -134,8 +121,8 @@
       <file leaf-file-name="HyperParameter.py" pinned="false" current-in-tab="true">
         <entry file="file://$PROJECT_DIR$/HyperParameter.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="300">
-              <caret line="12" column="38" lean-forward="false" selection-start-line="12" selection-start-column="38" selection-end-line="12" selection-end-column="38" />
+            <state relative-caret-position="200">
+              <caret line="8" column="39" lean-forward="true" selection-start-line="8" selection-start-column="39" selection-end-line="8" selection-end-column="39" />
               <folding />
             </state>
           </provider>
@@ -480,6 +467,14 @@
       <workItem from="1568208235466" duration="1152000" />
       <workItem from="1581737088244" duration="4621000" />
     </task>
+    <task id="LOCAL-00001" summary="ast">
+      <created>1588907443212</created>
+      <option name="number" value="00001" />
+      <option name="presentableId" value="LOCAL-00001" />
+      <option name="project" value="LOCAL" />
+      <updated>1588907443212</updated>
+    </task>
+    <option name="localTasksCounter" value="2" />
     <servers />
   </component>
   <component name="TodoView" selected-index="4">
@@ -493,9 +488,10 @@
   </component>
   <component name="ToolWindowManager">
     <frame x="-11" y="-11" width="2278" height="1466" extended-state="6" />
+    <editor active="true" />
     <layout>
       <window_info id="Project" active="false" anchor="left" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="true" show_stripe_button="true" weight="0.25731263" sideWeight="0.5" order="0" side_tool="false" content_ui="combo" />
-      <window_info id="TODO" active="true" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="true" show_stripe_button="true" weight="0.32981315" sideWeight="0.5" order="6" side_tool="false" content_ui="tabs" />
+      <window_info id="TODO" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="true" show_stripe_button="true" weight="0.32981315" sideWeight="0.5" order="6" side_tool="false" content_ui="tabs" />
       <window_info id="Event Log" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.33" sideWeight="0.5" order="7" side_tool="true" content_ui="tabs" />
       <window_info id="Find" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.32981315" sideWeight="0.5" order="1" side_tool="false" content_ui="tabs" />
       <window_info id="Run" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.32981315" sideWeight="0.5" order="2" side_tool="false" content_ui="tabs" />
@@ -1081,8 +1077,8 @@
     </entry>
     <entry file="file://$PROJECT_DIR$/HyperParameter.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="300">
-          <caret line="12" column="38" lean-forward="false" selection-start-line="12" selection-start-column="38" selection-end-line="12" selection-end-column="38" />
+        <state relative-caret-position="200">
+          <caret line="8" column="39" lean-forward="true" selection-start-line="8" selection-start-column="39" selection-end-line="8" selection-end-column="39" />
           <folding />
         </state>
       </provider>
